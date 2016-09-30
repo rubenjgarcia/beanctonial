@@ -2,11 +2,12 @@ package es.rubenjgarcia.beanctonial;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class FunctionalString implements Serializable {
+public class FunctionalString implements Serializable, Comparable<FunctionalString> {
 
     private final String s;
 
@@ -67,6 +68,27 @@ public class FunctionalString implements Serializable {
 
     public static Predicate<? super FunctionalString> lengthLte(int length) {
         return length(length, Condition.LESS_EQUALS);
+    }
+
+    public static Predicate<? super FunctionalString> string(String s) {
+        return p -> p.s.equals(s);
+    }
+
+    public static Predicate<? super FunctionalString> startsWith(String s) {
+        return p -> p.s.startsWith(s);
+    }
+
+    public static Predicate<? super FunctionalString> endsWith(String s) {
+        return p -> p.s.endsWith(s);
+    }
+
+    public static Comparator<? super FunctionalString> byLength() {
+        return (o1, o2) -> o1.s.length() - o2.s.length();
+    }
+
+    @Override
+    public int compareTo(FunctionalString o) {
+        return s.compareTo(o.s);
     }
 
     @Override
