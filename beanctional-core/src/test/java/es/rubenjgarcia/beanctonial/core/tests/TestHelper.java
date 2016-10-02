@@ -1,6 +1,6 @@
-package es.rubenjgarcia.beanctonial.test;
+package es.rubenjgarcia.beanctonial.core.tests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 public class TestHelper {
     public static <X extends Throwable> Throwable assertThrows(final Class<X> exceptionClass, final Runnable block) {
