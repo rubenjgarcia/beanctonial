@@ -23,14 +23,14 @@ public class FunctionalStringTestCase {
     public void canCompareFunctionalStrings() {
         FunctionalString fString = FString("FString");
         FunctionalString fString2 = FString("FString");
-        assertTrue("Functional String equals", fString.equals(fString2));
+        assertTrue("FunctionalString equals", fString.equals(fString2));
     }
 
     @Test
     public void canCloneFunctionalStrings() throws CloneNotSupportedException {
         FunctionalString fString = FString("FString");
         FunctionalString fString2 = (FunctionalString) fString.clone();
-        assertTrue("Functional String clone", fString.equals(fString2));
+        assertTrue("FunctionalString clone", fString.equals(fString2));
     }
 
     @Test
@@ -44,7 +44,7 @@ public class FunctionalStringTestCase {
         List<String> strings = Arrays.asList("One", null);
         List<FunctionalString> fStrings = toFunctionalList(strings, FunctionalString.class);
         assertEquals("List size", 2, fStrings.size());
-        Assert.assertEquals("List elements", FString("One"), fStrings.get(0));
+        assertEquals("List elements", FString("One"), fStrings.get(0));
     }
 
     @Test
@@ -89,28 +89,28 @@ public class FunctionalStringTestCase {
                 .filter(string("bbb"))
                 .collect(Collectors.toList());
         assertEquals("Filtered by string length", 1, fStringsFilteredByString.size());
-        Assert.assertEquals("Filtered by string", FString("bbb"), fStringsFilteredByString.get(0));
+        assertEquals("Filtered by string", FString("bbb"), fStringsFilteredByString.get(0));
 
         List<FunctionalString> fStringsFilteredByString2 = fStrings
                 .stream()
                 .filter(string(null))
                 .collect(Collectors.toList());
         assertEquals("Filtered by string length", 1, fStringsFilteredByString2.size());
-        Assert.assertEquals("Filtered by string", FString(null), fStringsFilteredByString2.get(0));
+        assertEquals("Filtered by string", FString(null), fStringsFilteredByString2.get(0));
 
         List<FunctionalString> fStringsFilteredByStart = fStrings
                 .stream()
                 .filter(startsWith("a"))
                 .collect(Collectors.toList());
         assertEquals("Filtered by start length", 1, fStringsFilteredByStart.size());
-        Assert.assertEquals("Filtered by start", FString("aa"), fStringsFilteredByStart.get(0));
+        assertEquals("Filtered by start", FString("aa"), fStringsFilteredByStart.get(0));
 
         List<FunctionalString> fStringsFilteredByEnd = fStrings
                 .stream()
                 .filter(endsWith("cc"))
                 .collect(Collectors.toList());
         assertEquals("Filtered by end length", 1, fStringsFilteredByEnd.size());
-        Assert.assertEquals("Filtered by end", FString("cccc"), fStringsFilteredByEnd.get(0));
+        assertEquals("Filtered by end", FString("cccc"), fStringsFilteredByEnd.get(0));
     }
 
     @Test
@@ -120,10 +120,10 @@ public class FunctionalStringTestCase {
                 .stream()
                 .sorted()
                 .collect(Collectors.toList());
-        Assert.assertEquals("FunctionalString sorted", FString("a"), fStringsSorted.get(0));
-        Assert.assertEquals("FunctionalString sorted", FString("b"), fStringsSorted.get(1));
-        Assert.assertEquals("FunctionalString sorted", FString("c"), fStringsSorted.get(2));
-        Assert.assertEquals("FunctionalString sorted", FString(null), fStringsSorted.get(3));
+        assertEquals("FunctionalString sorted", FString("a"), fStringsSorted.get(0));
+        assertEquals("FunctionalString sorted", FString("b"), fStringsSorted.get(1));
+        assertEquals("FunctionalString sorted", FString("c"), fStringsSorted.get(2));
+        assertEquals("FunctionalString sorted", FString(null), fStringsSorted.get(3));
     }
 
     @Test
@@ -133,12 +133,12 @@ public class FunctionalStringTestCase {
                 .stream()
                 .max(byLength())
                 .get();
-        Assert.assertEquals("FunctionalString compared by length", FString("aaa"), maxFString);
+        assertEquals("FunctionalString compared by length", FString("aaa"), maxFString);
 
         FunctionalString minFString = fStrings
                 .stream()
                 .min(byLength())
                 .get();
-        Assert.assertEquals("FunctionalString compared by length", FString(null), minFString);
+        assertEquals("FunctionalString compared by length", FString(null), minFString);
     }
 }

@@ -18,10 +18,12 @@ import javax.lang.model.util.Elements;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static es.rubenjgarcia.beanctonial.core.functional.FunctionalExceptions.rethrowConsumer;
+import static es.rubenjgarcia.beanctonial.core.functional.FunctionalFilters.*;
 
 public class FunctionalBeanProcessor extends AbstractProcessor {
 
@@ -68,10 +70,13 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
             ClassName functionalClassName = ClassName.get(pkg.toString(), "F" + name.toString());
             ClassName declaringClass = ClassName.get(pkg.toString(), name.toString());
 
-            List<Element> fields = typeElement.getEnclosedElements()
+
+            Function<Class, Predicate<Element>> elementsPredicate = i -> el -> el.asType().toString().equals(i.getCanonicalName());
+            List<Element> enclosedElements = (List<Element>) typeElement.getEnclosedElements();
+            List<Element> fields = enclosedElements
                     .stream()
                     .filter(el -> el.getKind().isField())
-                    .filter(el -> el.asType().toString().equals(String.class.getCanonicalName()))
+                    .filter(oneOf(elementsPredicate.apply(String.class), elementsPredicate.apply(Byte.class)))
                     .collect(Collectors.toList());
 
             List<Element> getters = ElementFilter.methodsIn(elementUtils.getAllMembers(typeElement))
@@ -95,7 +100,9 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
                     .addStatement("super($N)", uncapitalizeName)
                     .beginControlFlow("if ($N != null)", uncapitalizeName);
 
-            fields.forEach(f -> {
+            fields.stream()
+                    .filter(elementsPredicate.apply(String.class))
+                    .forEach(f -> {
                 String fieldName = f.getSimpleName().toString();
                 getters
                         .stream()

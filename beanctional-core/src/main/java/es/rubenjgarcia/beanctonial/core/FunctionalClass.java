@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class FunctionalClass<A extends Comparable<A>> implements Serializable, Comparable<FunctionalClass<A>> {
+public abstract class FunctionalClass<A> implements Serializable, Comparable<FunctionalClass<A>> {
 
     public FunctionalClass(A a) {
         this.value = a;
@@ -24,9 +24,11 @@ public abstract class FunctionalClass<A extends Comparable<A>> implements Serial
             return Integer.MAX_VALUE;
         } else if (o.value == null) {
             return Integer.MIN_VALUE;
-        } else {
-            return value.compareTo(o.value);
+        } else if (Comparable.class.isAssignableFrom(value.getClass())) {
+            return ((Comparable) value).compareTo(o.value);
         }
+
+        throw new IllegalArgumentException("Can't compare class");
     }
 
     public FunctionalClass<A> clone() throws CloneNotSupportedException {
@@ -37,7 +39,7 @@ public abstract class FunctionalClass<A extends Comparable<A>> implements Serial
         }
     }
 
-    public static <A extends Comparable<A>, B extends FunctionalClass<A>> List<B> toFunctionalList(List<A> aList, Class<B> clazz) {
+    public static <A, B extends FunctionalClass<A>> List<B> toFunctionalList(List<A> aList, Class<B> clazz) {
         if (aList == null) {
             return null;
         } else if (aList.size() == 0) {
@@ -47,11 +49,11 @@ public abstract class FunctionalClass<A extends Comparable<A>> implements Serial
         return (List<B>) aList.stream().map(FunctionalExceptions.rethrowFunction(a -> toFunctional(a, clazz))).collect(Collectors.toList());
     }
 
-    private static <A extends Comparable<A>, B extends FunctionalClass<A>> FunctionalClass<A> toFunctional(A a, Class<B> clazz) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    private static <A, B extends FunctionalClass<A>> FunctionalClass<A> toFunctional(A a, Class<B> clazz) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         return newInstance((Class<FunctionalClass<A>>) clazz, a);
     }
 
-    private static <A extends Comparable<A>> FunctionalClass<A> newInstance(Class<FunctionalClass<A>> clazz, A value) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    private static <A> FunctionalClass<A> newInstance(Class<FunctionalClass<A>> clazz, A value) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Constructor<? extends FunctionalClass> constructor = (Constructor<? extends FunctionalClass>) clazz.getDeclaredConstructors()[0];
         return constructor.newInstance(value);
     }
