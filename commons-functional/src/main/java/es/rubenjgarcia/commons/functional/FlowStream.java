@@ -23,6 +23,13 @@ public class FlowStream<S, C> implements Stream<S> {
         this.predicateFunctions = Collections.singletonList(tuple(p, f));
     }
 
+    private FlowStream(Stream<S> s, Collection<C> c, boolean all, List<Tuple2<Predicate<C>, Function<C, S>>> predicateFunctions) {
+        this.s = s;
+        this.c = c;
+        this.all = all;
+        this.predicateFunctions = predicateFunctions;
+    }
+
     public static <C, S> FlowStream<S, C> mapIf(Collection<C> c, Predicate<C> p, Function<C, S> mapper) {
         return getScFlowStream(c, p, mapper, true);
     }
@@ -59,17 +66,19 @@ public class FlowStream<S, C> implements Stream<S> {
         if (all) {
             return new FlowStream<>(Stream.concat(this.s, getScFlowStream(this.c, p, mapper, false).s), this.c, false, p, mapper);
         } else {
-            FunctionalFilters.anyOf(this.c.stream(), predicateFunctions.stream().map(pf -> pf._1).collect(Collectors.toList()));
+            Stream<S> sStream = this.c.stream().map(o -> FunctionalFilters.findFirst(predicateFunctions.stream(), pf -> pf._1.test(o))
+                    .map(pf -> pf._2.apply(o))
+                    .orElseGet(() -> {
+                        if (p.test(o)) {
+                            return mapper.apply(o);
+                        } else {
+                            return null;
+                        }
+                    })).filter(o -> o != null);
 
-            Stream<S> stream1 = this.c.stream()
-                    .map(o -> FunctionalFilters.findFirst(predicateFunctions.stream(), pf -> pf._1.test(o))
-                            .map(pf -> pf._2.apply(o))
-                            .orElse(null))
-                    .filter(f -> f != null);
-//            Stream<S> stream2 = this.c.stream()
-//                    .noneMatch(o -> FunctionalFilters.noneOf(predicateFunctions.stream(), pf -> pf._1.test(o)));
-
-            return new FlowStream<>(Stream.concat(stream1, getScFlowStream(this.c, p, mapper, false).s), this.c, false, p, mapper);
+            List<Tuple2<Predicate<C>, Function<C, S>>> predicateFunctions = new ArrayList<>(this.predicateFunctions);
+            predicateFunctions.add(tuple(p, mapper));
+            return new FlowStream<>(sStream, this.c, false, predicateFunctions);
         }
     }
 
@@ -83,8 +92,8 @@ public class FlowStream<S, C> implements Stream<S> {
         } else {
             return this.c.stream()
                     .map(o -> FunctionalFilters.findFirst(predicateFunctions.stream(), pf -> pf._1.test(o))
-                            .map(pf -> pf._2.apply(o))
-                            .orElse(mapper.apply(o)));
+                    .map(pf -> pf._2.apply(o))
+                    .orElseGet(() -> mapper.apply(o)));
         }
     }
 

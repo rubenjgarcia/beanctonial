@@ -58,6 +58,10 @@ public interface FunctionalFilters {
         return s.filter(p).findFirst();
     }
 
+    static <T> Optional<Predicate<T>> findFirst(T o, Collection<Predicate<T>> ps) {
+        return ps.stream().filter(p -> p.test(o)).findFirst();
+    }
+
     static <T> Optional<T> findFirstNotMatch(Stream<T> s, Predicate<T> p) {
         return s.filter(t -> !p.test(t)).findFirst();
     }

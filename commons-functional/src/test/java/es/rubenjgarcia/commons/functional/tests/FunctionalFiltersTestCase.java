@@ -9,9 +9,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static es.rubenjgarcia.commons.functional.FunctionalFilters.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class FunctionalFiltersTestCase {
 
@@ -112,5 +110,22 @@ public class FunctionalFiltersTestCase {
 
         last = findLast(Stream.of(1, 2, 3), p -> p > 1 && p < 2);
         assertFalse(last.isPresent());
+    }
+
+    @Test
+    public void testFindFirstPredicate() {
+        Predicate<Integer> p1 = n -> n == 1;
+        Predicate<Integer> p2 = n -> n > 1;
+
+        Optional<Predicate<Integer>> first = findFirst(1, Arrays.asList(p1, p2));
+        assertTrue(first.isPresent());
+        assertEquals(p1, first.get());
+
+        first = findFirst(2, Arrays.asList(p1, p2));
+        assertTrue(first.isPresent());
+        assertEquals(p2, first.get());
+
+        first = findFirst(0, Arrays.asList(p1, p2));
+        assertFalse(first.isPresent());
     }
 }
