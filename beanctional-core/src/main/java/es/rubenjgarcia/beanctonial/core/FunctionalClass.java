@@ -1,13 +1,13 @@
 package es.rubenjgarcia.beanctonial.core;
 
-import es.rubenjgarcia.beanctonial.core.functional.FunctionalExceptions;
-
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowFunction;
 
 public abstract class FunctionalClass<A> implements Serializable, Comparable<FunctionalClass<A>> {
 
@@ -46,7 +46,7 @@ public abstract class FunctionalClass<A> implements Serializable, Comparable<Fun
             return Collections.emptyList();
         }
         
-        return (List<B>) aList.stream().map(FunctionalExceptions.rethrowFunction(a -> toFunctional(a, clazz))).collect(Collectors.toList());
+        return (List<B>) aList.stream().map(rethrowFunction(a -> toFunctional(a, clazz))).collect(Collectors.toList());
     }
 
     private static <A, B extends FunctionalClass<A>> FunctionalClass<A> toFunctional(A a, Class<B> clazz) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {

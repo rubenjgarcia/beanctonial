@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static es.rubenjgarcia.beanctonial.core.FunctionalNumber.*;
+import static es.rubenjgarcia.beanctonial.core.tests.TestHelper.*;
 import static org.junit.Assert.*;
 
 public class FunctionalNumberTestCase {
@@ -149,10 +150,10 @@ public class FunctionalNumberTestCase {
                 .count();
         assertEquals("Value equals null", 1, valueNull);
 
-        TestHelper.assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(gt(null)).count());
-        TestHelper.assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(gte(null)).count());
-        TestHelper.assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(lt(null)).count());
-        TestHelper.assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(gte(null)).count());
+        assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(gt(null)).count());
+        assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(gte(null)).count());
+        assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(lt(null)).count());
+        assertThrows(IllegalArgumentException.class, () -> fNumbers.stream().filter(gte(null)).count());
     }
 
     @Test
@@ -162,11 +163,11 @@ public class FunctionalNumberTestCase {
                 .stream()
                 .sorted()
                 .collect(Collectors.toList());
-        Assert.assertEquals("FunctionalNumber sorted", FNumber((long) 1), fNumbersSorted.get(0));
-        Assert.assertEquals("FunctionalNumber sorted", FNumber((short) 2), fNumbersSorted.get(1));
-        Assert.assertEquals("FunctionalNumber sorted", FNumber((byte) 3), fNumbersSorted.get(2));
-        Assert.assertEquals("FunctionalNumber sorted", FNumber((double) 4), fNumbersSorted.get(3));
-        Assert.assertEquals("FunctionalNumber sorted", FNumber(5), fNumbersSorted.get(4));
-        Assert.assertEquals("FunctionalNumber sorted", FNumber(null), fNumbersSorted.get(5));
+        assertEquals("FunctionalNumber sorted", FNumber((long) 1), fNumbersSorted.get(0));
+        assertEquals("FunctionalNumber sorted", FNumber((short) 2), fNumbersSorted.get(1));
+        assertEquals("FunctionalNumber sorted", FNumber((byte) 3), fNumbersSorted.get(2));
+        assertEquals("FunctionalNumber sorted", FNumber((double) 4), fNumbersSorted.get(3));
+        assertEquals("FunctionalNumber sorted", FNumber(5), fNumbersSorted.get(4));
+        assertEquals("FunctionalNumber sorted", FNumber(null), fNumbersSorted.get(5));
     }
 }

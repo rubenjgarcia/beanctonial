@@ -11,6 +11,7 @@
     <modules>
         <module>beanctional-generator</module>
         <module>beanctional-core</module>
+        <module>commons-functional</module>
     </modules>
 
     <name>Beanctional</name>

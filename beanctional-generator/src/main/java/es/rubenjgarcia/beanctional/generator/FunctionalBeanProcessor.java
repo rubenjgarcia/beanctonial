@@ -1,10 +1,11 @@
 package es.rubenjgarcia.beanctional.generator;
 
 import com.squareup.javapoet.*;
+import es.rubenjgarcia.beanctional.generator.annotation.FunctionalBean;
 import es.rubenjgarcia.beanctonial.core.FunctionalClass;
 import es.rubenjgarcia.beanctonial.core.FunctionalString;
-import es.rubenjgarcia.beanctonial.core.annotation.FunctionalBean;
-import es.rubenjgarcia.beanctonial.core.functional.FunctionalExceptions.Consumer_WithExceptions;
+import es.rubenjgarcia.commons.functional.FunctionalExceptions.Consumer_WithExceptions;
+import es.rubenjgarcia.commons.functional.FunctionalFilters;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -22,8 +23,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static es.rubenjgarcia.beanctonial.core.functional.FunctionalExceptions.rethrowConsumer;
-import static es.rubenjgarcia.beanctonial.core.functional.FunctionalFilters.*;
+import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowConsumer;
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.*;
 
 public class FunctionalBeanProcessor extends AbstractProcessor {
 
@@ -73,19 +74,16 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
 
             Function<Class, Predicate<Element>> elementsPredicate = i -> el -> el.asType().toString().equals(i.getCanonicalName());
             List<Element> enclosedElements = (List<Element>) typeElement.getEnclosedElements();
-            List<Element> fields = enclosedElements
-                    .stream()
+            List<Element> fields = enclosedElements.stream()
                     .filter(el -> el.getKind().isField())
-                    .filter(oneOf(elementsPredicate.apply(String.class), elementsPredicate.apply(Byte.class)))
+                    .filter(FunctionalFilters.anyOf(elementsPredicate.apply(String.class), elementsPredicate.apply(Byte.class)))
                     .collect(Collectors.toList());
 
-            List<Element> getters = ElementFilter.methodsIn(elementUtils.getAllMembers(typeElement))
-                    .stream()
+            List<Element> getters = ElementFilter.methodsIn(elementUtils.getAllMembers(typeElement)).stream()
                     .filter(m -> ((ExecutableElement) m).getParameters().size() == 0 && m.getSimpleName().toString().startsWith("get"))
                     .collect(Collectors.toList());
 
-            List<FieldSpec> fieldSpecs = fields
-                    .stream()
+            List<FieldSpec> fieldSpecs = fields.stream()
                     .map(f -> FieldSpec.builder(FunctionalString.class, f.getSimpleName().toString())
                             .addModifiers(Modifier.PRIVATE)
                             .build()).collect(Collectors.toList());
@@ -100,14 +98,9 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
                     .addStatement("super($N)", uncapitalizeName)
                     .beginControlFlow("if ($N != null)", uncapitalizeName);
 
-            fields.stream()
-                    .filter(elementsPredicate.apply(String.class))
-                    .forEach(f -> {
+            fields.forEach(f -> {
                 String fieldName = f.getSimpleName().toString();
-                getters
-                        .stream()
-                        .filter(g -> g.getSimpleName().toString().equalsIgnoreCase("get" + fieldName))
-                        .findFirst()
+                findFirst(getters.stream(), g -> g.getSimpleName().toString().equalsIgnoreCase("get" + fieldName))
                         .map(g -> constructorBuilder.addStatement("$N = $T.$N($N.$N())", fieldName, TypeName.get(FunctionalString.class), "FString", beanParameter, g.getSimpleName().toString()));
             });
 

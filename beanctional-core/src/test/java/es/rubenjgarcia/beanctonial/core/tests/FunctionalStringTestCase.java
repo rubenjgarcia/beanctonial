@@ -1,7 +1,6 @@
 package es.rubenjgarcia.beanctonial.core.tests;
 
 import es.rubenjgarcia.beanctonial.core.FunctionalString;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;

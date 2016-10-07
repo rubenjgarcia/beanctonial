@@ -1,6 +1,6 @@
 package es.rubenjgarcia.beanctional.generator.tests;
 
-import es.rubenjgarcia.beanctonial.core.annotation.FunctionalBean;
+import es.rubenjgarcia.beanctional.generator.annotation.FunctionalBean;
 
 @FunctionalBean
 public class Bean implements Comparable<Bean> {

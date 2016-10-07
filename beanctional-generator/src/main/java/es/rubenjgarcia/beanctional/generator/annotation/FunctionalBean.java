@@ -1,4 +1,4 @@
-package es.rubenjgarcia.beanctonial.core.annotation;
+package es.rubenjgarcia.beanctional.generator.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
