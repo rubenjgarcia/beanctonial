@@ -3,7 +3,9 @@ package es.rubenjgarcia.beanctional.generator;
 import com.squareup.javapoet.*;
 import es.rubenjgarcia.beanctional.generator.annotation.FunctionalBean;
 import es.rubenjgarcia.beanctonial.core.FunctionalClass;
+import es.rubenjgarcia.beanctonial.core.FunctionalNumber;
 import es.rubenjgarcia.beanctonial.core.FunctionalString;
+import es.rubenjgarcia.commons.functional.FlowStream;
 import es.rubenjgarcia.commons.functional.FunctionalExceptions.Consumer_WithExceptions;
 import es.rubenjgarcia.commons.functional.FunctionalFilters;
 import org.apache.commons.lang3.StringUtils;
@@ -18,13 +20,14 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static es.rubenjgarcia.commons.functional.FunctionalExceptions.rethrowConsumer;
-import static es.rubenjgarcia.commons.functional.FunctionalFilters.*;
+import static es.rubenjgarcia.commons.functional.FunctionalFilters.findFirst;
 
 public class FunctionalBeanProcessor extends AbstractProcessor {
 
@@ -83,10 +86,9 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
                     .filter(m -> ((ExecutableElement) m).getParameters().size() == 0 && m.getSimpleName().toString().startsWith("get"))
                     .collect(Collectors.toList());
 
-            List<FieldSpec> fieldSpecs = fields.stream()
-                    .map(f -> FieldSpec.builder(FunctionalString.class, f.getSimpleName().toString())
-                            .addModifiers(Modifier.PRIVATE)
-                            .build()).collect(Collectors.toList());
+            List<FieldSpec> fieldSpecs = FlowStream.mapIfAny(fields, elementPredicate(String.class), elementFieldSpec(FunctionalString.class))
+                    .elseIfAnyMap(elementPredicate(Byte.class), elementFieldSpec(FunctionalNumber.class))
+                    .collect(Collectors.toList());
 
             ParameterSpec beanParameter = ParameterSpec.builder(declaringClass, uncapitalizeName)
                     .addModifiers(Modifier.FINAL)
@@ -98,11 +100,9 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
                     .addStatement("super($N)", uncapitalizeName)
                     .beginControlFlow("if ($N != null)", uncapitalizeName);
 
-            fields.forEach(f -> {
-                String fieldName = f.getSimpleName().toString();
-                findFirst(getters.stream(), g -> g.getSimpleName().toString().equalsIgnoreCase("get" + fieldName))
-                        .map(g -> constructorBuilder.addStatement("$N = $T.$N($N.$N())", fieldName, TypeName.get(FunctionalString.class), "FString", beanParameter, g.getSimpleName().toString()));
-            });
+            FlowStream.mapIfAny(fields, elementPredicate(String.class), elementMapper(getters, beanParameter, constructorBuilder, FunctionalString.class, "FString"))
+                    .elseIfAnyMap(elementPredicate(Byte.class), elementMapper(getters, beanParameter, constructorBuilder, FunctionalNumber.class, "FNumber"))
+                    .count(); // FIXME Foreach
 
             MethodSpec constructor = constructorBuilder
                     .endControlFlow()
@@ -121,19 +121,9 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
                     .addStatement("return $N(new $T())", name.toString(), declaringClass)
                     .build();
 
-            List<MethodSpec> predicateFields = fields.stream()
-                    .map(f -> {
-                        ParameterSpec predicate = ParameterSpec.builder(ParameterizedTypeName.get(ClassName.get(Predicate.class), WildcardTypeName.supertypeOf(FunctionalString.class)), "ps")
-                                .addModifiers(Modifier.FINAL)
-                                .build();
-
-                        return MethodSpec.methodBuilder(f.getSimpleName().toString())
-                                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                                .addParameter(predicate)
-                                .returns(ParameterizedTypeName.get(ClassName.get(Predicate.class), WildcardTypeName.supertypeOf(functionalClassName)))
-                                .addStatement("return pb -> ps.test(pb.$N)", f.getSimpleName().toString())
-                                .build();
-                    }).collect(Collectors.toList());
+            List<MethodSpec> predicateFields = FlowStream.mapIfAny(fields, elementPredicate(String.class), predicatesField(functionalClassName, FunctionalString.class))
+                    .elseIfAnyMap(elementPredicate(Byte.class), predicatesField(functionalClassName, FunctionalNumber.class))
+                    .collect(Collectors.toList());
 
             TypeSpec functionalClass = TypeSpec.classBuilder(functionalClassName)
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -147,6 +137,39 @@ public class FunctionalBeanProcessor extends AbstractProcessor {
 
             JavaFile javaFile = JavaFile.builder(pkg.toString(), functionalClass).build();
             javaFile.writeTo(filer);
+        };
+    }
+
+    private Function<Element, MethodSpec> predicatesField(ClassName fClass, Class<? extends FunctionalClass> superFClass) {
+        return f -> {
+            ParameterSpec predicate = ParameterSpec.builder(ParameterizedTypeName.get(ClassName.get(Predicate.class), WildcardTypeName.supertypeOf(superFClass)), "ps")
+                    .addModifiers(Modifier.FINAL)
+                    .build();
+
+            return MethodSpec.methodBuilder(f.getSimpleName().toString())
+                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                    .addParameter(predicate)
+                    .returns(ParameterizedTypeName.get(ClassName.get(Predicate.class), WildcardTypeName.supertypeOf(fClass)))
+                    .addStatement("return pb -> ps.test(pb.$N)", f.getSimpleName().toString())
+                    .build();
+        };
+    }
+
+    private Function<Element, FieldSpec> elementFieldSpec(Class<? extends FunctionalClass> fClass) {
+        return f -> FieldSpec.builder(fClass, f.getSimpleName().toString())
+                .addModifiers(Modifier.PRIVATE)
+                .build();
+    }
+
+    private Predicate<Element> elementPredicate(Class clazz) {
+        return f -> f.asType().toString().equals(clazz.getCanonicalName());
+    }
+
+    private Function<Element, Optional<MethodSpec.Builder>> elementMapper(List<Element> getters, ParameterSpec beanParameter, MethodSpec.Builder constructorBuilder, Class<? extends FunctionalClass> fClass, String fName) {
+        return f -> {
+            String fieldName = f.getSimpleName().toString();
+            return findFirst(getters.stream(), g -> g.getSimpleName().toString().equalsIgnoreCase("get" + fieldName))
+                    .map(g -> constructorBuilder.addStatement("$N = $T.$N($N.$N())", fieldName, TypeName.get(fClass), fName, beanParameter, g.getSimpleName().toString()));
         };
     }
 }
